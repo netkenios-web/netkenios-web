@@ -1,86 +1,599 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NETKENIOS — Portal do Assinante</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Orbitron', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #000; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* VÍDEO DE FUNDO */
-    #bg-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; }
-
-    /* CARD DE LOGIN */
-    .glass-card { 
-      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); padding: 40px; 
-      border-radius: 20px; border: 1px solid rgba(0, 210, 255, 0.5); 
-      text-align: center; width: 350px; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    :root {
+      --cyan: #00d2ff;
+      --purple: #9d50bb;
+      --dark: #050505;
+      --card-bg: rgba(10, 10, 20, 0.92);
+      --danger: #d63031;
+      --warning: #f39c12;
+      --success: #00b894;
     }
 
-    /* EFEITO DE RAIO/GLITCH NO NOME */
-    .brand-name {
-      font-size: 40px; color: #fff; text-transform: uppercase;
-      letter-spacing: 5px; animation: glitch 2s infinite;
-      text-shadow: 0 0 10px #00d2ff, 0 0 20px #00d2ff;
+    html, body {
+      height: 100%;
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      overflow-x: hidden;
     }
 
-    @keyframes glitch {
-      0%, 90%, 100% { opacity: 1; transform: skewX(0deg); }
-      92% { opacity: 0.2; transform: skewX(20deg); }
-      94% { opacity: 0.8; transform: skewX(-20deg); }
-      96% { opacity: 0.2; transform: skewX(0deg); }
+    /* ── CANVAS DE PARTÍCULAS ── */
+    #canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
 
-    input { 
-      width: 100%; padding: 15px; margin: 20px 0; background: rgba(255,255,255,0.1); 
-      border: 1px solid #00d2ff; border-radius: 10px; color: #fff; text-align: center; font-size: 16px; 
+    /* ── LAYOUT PRINCIPAL ── */
+    #app {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    button { 
-      width: 100%; padding: 15px; background: #00d2ff; border: none; 
-      border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
+
+    /* ── TELA DE LOGIN ── */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
-    button:hover { background: #fff; }
+
+    .glass-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 210, 255, 0.2);
+      border-radius: 24px;
+      padding: 40px 36px;
+      box-shadow: 0 0 60px rgba(0, 210, 255, 0.08), 0 0 20px rgba(0,0,0,0.6);
+      backdrop-filter: blur(16px);
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-board {
+      font-family: 'Orbitron', monospace;
+      margin-bottom: 28px;
+    }
+    .score-label { font-size: 9px; color: #555; letter-spacing: 2px; }
+    .score-number { font-size: 28px; color: var(--cyan); font-weight: 900; line-height: 1; }
+
+    .brand {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(22px, 6vw, 32px);
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: #fff;
+      text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(0,210,255,0.3);
+      margin-bottom: 4px;
+    }
+
+    .tagline {
+      font-size: 10px;
+      color: var(--cyan);
+      letter-spacing: 3px;
+      margin-bottom: 28px;
+    }
+
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+
+    .input-field {
+      width: 100%;
+      height: 52px;
+      background: rgba(255,255,255,0.04);
+      border: none;
+      border-bottom: 2px solid var(--cyan);
+      border-radius: 10px 10px 0 0;
+      padding: 0 18px;
+      color: #fff;
+      font-size: 17px;
+      font-family: 'Rajdhani', sans-serif;
+      letter-spacing: 2px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 20px;
+    }
+    .input-field:focus { background: rgba(0,210,255,0.06); border-bottom-color: #fff; }
+    .input-field::placeholder { color: #444; letter-spacing: 1px; font-size: 14px; }
+
+    .btn-primary {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, var(--cyan), #0099cc);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,210,255,0.4);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,210,255,0.6); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── TELA DE FATURAS ── */
+    #bills-screen { display: none; flex-direction: column; min-height: 100vh; }
+
+    .top-header {
+      background: linear-gradient(135deg, #001830, #003060);
+      border-bottom: 1px solid rgba(0,210,255,0.2);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-info .sub { font-size: 10px; color: rgba(0,210,255,0.7); letter-spacing: 1px; }
+    .header-info .name { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; }
+
+    .btn-logout {
+      background: rgba(214,48,49,0.15);
+      border: 1px solid rgba(214,48,49,0.4);
+      color: #ff7675;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover { background: rgba(214,48,49,0.3); }
+
+    .bills-content { flex: 1; padding: 20px; max-width: 700px; margin: 0 auto; width: 100%; }
+
+    .btn-refresh {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, var(--purple), #6c3483);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .btn-refresh:hover { transform: translateY(-2px); }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── CARD DE FATURA ── */
+    .bill-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-left: 6px solid var(--cyan);
+      animation: fadeUp 0.4s ease both;
+      color: #111;
+    }
+    .bill-card.atrasado { border-left-color: var(--danger); animation: pulseCard 1.5s ease-in-out infinite; }
+
+    @keyframes pulseCard {
+      0%, 100% { background: #fff5f5; border-left-color: var(--danger); }
+      50%       { background: #fffde7; border-left-color: var(--warning); }
+    }
+
+    .bill-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .bill-ref { font-size: 12px; color: #888; }
+    .badge-atraso {
+      background: var(--danger);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+      animation: badgePulse 1s ease-in-out infinite;
+    }
+    @keyframes badgePulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    .atraso-row {
+      background: rgba(214,48,49,0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .bill-info { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .info-col .lbl { font-size: 10px; color: #aaa; margin-bottom: 2px; }
+    .info-col .val { font-size: 16px; font-weight: 700; }
+    .info-col .val.valor { font-size: 26px; font-weight: 900; color: #111; }
+    .info-col .val.atrasado-text { color: var(--danger); }
+
+    .bill-btns { display: flex; gap: 10px; }
+    .btn-pix, .btn-boleto {
+      flex: 1;
+      height: 44px;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn-pix { background: var(--success); }
+    .btn-boleto { background: #0056b3; }
+    .btn-pix:hover, .btn-boleto:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn-pix:disabled, .btn-boleto:disabled { background: #ccc; cursor: not-allowed; transform: none; filter: none; }
+    .btn-copied { background: #27ae60 !important; }
+
+    /* ── MENSAGENS ── */
+    .empty-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #555;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+    .empty-msg span { display: block; font-size: 40px; margin-bottom: 12px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #27ae60;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 14px;
+      z-index: 999;
+      transition: transform 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── LOADING SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSIVO ── */
+    @media (max-width: 480px) {
+      .glass-card { padding: 30px 24px; }
+      .brand { font-size: 24px; letter-spacing: 4px; }
+      .bill-btns { flex-direction: column; }
+    }
   </style>
 </head>
-<body onclick="desbloquearAudio()">
+<body>
 
-  <video id="bg-video" autoplay loop playsinline muted>
-    <source src="fazer_um_video_desse_velocimet.mp4" type="video/mp4">
-  </video>
+<canvas id="canvas"></canvas>
+<div id="toast">✓ Copiado!</div>
 
-  <div class="glass-card">
-    <h1 class="brand-name">NETKENIOS</h1>
-    <input type="tel" id="cpf-input" placeholder="DIGITE SEU CPF" maxlength="14">
-    <button onclick="buscarCliente()">ACESSAR</button>
+<div id="app">
+
+  <!-- TELA DE LOGIN -->
+  <div id="login-screen">
+    <div class="glass-card">
+      <div class="score-board">
+        <div class="score-label">PACOTES CAPTURADOS</div>
+        <div class="score-number" id="score">0</div>
+      </div>
+      <div class="brand">NETKENIOS</div>
+      <div class="tagline">CONECTANDO SEU FUTURO</div>
+      <div class="divider"></div>
+      <input class="input-field" id="cpf-input" type="tel" placeholder="Digite seu CPF" maxlength="14" inputmode="numeric" />
+      <button class="btn-primary" id="btn-entrar" onclick="buscarCliente()">ENTRAR NO PORTAL</button>
+    </div>
   </div>
 
-  <script>
-    const video = document.getElementById('bg-video');
+  <!-- TELA DE FATURAS -->
+  <div id="bills-screen">
+    <div class="top-header">
+      <div class="header-info">
+        <div class="sub">ASSINANTE</div>
+        <div class="name" id="cliente-nome">—</div>
+      </div>
+      <button class="btn-logout" onclick="sair()">SAIR</button>
+    </div>
+    <div class="bills-content">
+      <button class="btn-refresh" id="btn-refresh" onclick="buscarBoletos()">ATUALIZAR FATURAS</button>
+      <div id="bills-list"></div>
+    </div>
+  </div>
 
-    // Tentar garantir que o vídeo rode assim que a página carregar
-    window.onload = () => { video.play().catch(() => {}); };
+</div>
 
-    // Desbloqueia o áudio ao primeiro clique na página
-    function desbloquearAudio() {
-      if (video.muted) {
-        video.muted = false;
-        video.play();
+<script>
+  // ── CONFIGURAÇÃO ──
+  const TOKEN = 'SXCV24OGER:XHIQTQHGOBKUQVCEC1BUACLV26TQT1WP';
+  const HEADERS = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+
+  let clienteAtual = null;
+  let score = 0;
+
+  // ── MÁSCARA CPF ──
+  document.getElementById('cpf-input').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    this.value = v;
+  });
+
+  document.getElementById('cpf-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') buscarCliente();
+  });
+
+  // ── FUNÇÕES PRINCIPAIS ──
+  async function buscarCliente() {
+    const cpf = document.getElementById('cpf-input').value.replace(/\D/g, '');
+    if (cpf.length < 11) return alert('CPF inválido. Digite os 11 dígitos.');
+    const btn = document.getElementById('btn-entrar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const r = await fetch(`https://api.mikweb.com.br/v1/admin/customers?search=${cpf}`, { headers: HEADERS });
+      const d = await r.json();
+      if (d.customers?.length > 0) {
+        clienteAtual = d.customers[0];
+        document.getElementById('cliente-nome').textContent = clienteAtual.full_name;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('bills-screen').style.display = 'flex';
+        buscarBoletos();
+      } else {
+        alert('Assinante não encontrado. Verifique o CPF.');
       }
+    } catch (e) {
+      alert('Falha na conexão. Tente novamente.');
     }
+    btn.disabled = false;
+    btn.innerHTML = 'ENTRAR NO PORTAL';
+  }
 
-    async function buscarCliente() {
-      const cpf = document.getElementById('cpf-input').value.replace(/\D/g, '');
-      try {
-        // Chamada segura para o backend (API)
-        const r = await fetch(`/api/buscar-faturas?customer_id=${cpf}`);
-        const data = await r.json();
-        if (data.error) alert("Erro: " + data.error);
-        else alert("Acesso autorizado!");
-      } catch (e) {
-        alert("Erro no servidor.");
-      }
+  async function buscarBoletos() {
+    const btn = document.getElementById('btn-refresh');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    const lista = document.getElementById('bills-list');
+    lista.innerHTML = '<div class="empty-msg"><span>⏳</span>Carregando faturas...</div>';
+    try {
+      const r = await fetch(`https://api.mikweb.com.br/v1/admin/billings?customer_id=${clienteAtual.id}&per_page=100&sort_field=due_day&sort_direction=asc`, { headers: HEADERS });
+      const d = await r.json();
+      const pendentes = (d.billings || []).filter(b => b.situation_id !== 3);
+      renderBoletos(pendentes);
+    } catch (e) {
+      lista.innerHTML = '<div class="empty-msg"><span>❌</span>Falha ao carregar faturas</div>';
     }
-  </script>
+    btn.disabled = false;
+    btn.innerHTML = 'ATUALIZAR FATURAS';
+  }
+
+  function renderBoletos(boletos) {
+    const lista = document.getElementById('bills-list');
+    if (boletos.length === 0) {
+      lista.innerHTML = '<div class="empty-msg"><span>✅</span>Nenhuma fatura pendente!</div>';
+      return;
+    }
+    lista.innerHTML = boletos.map(b => {
+      const atraso = calcularAtraso(b.due_day);
+      const atrasado = atraso !== null;
+      return `
+        <div class="bill-card ${atrasado ? 'atrasado' : ''}">
+          <div class="bill-header">
+            <span class="bill-ref">${b.reference || 'Internet Fibra Óptica'}</span>
+            ${atrasado ? `<span class="badge-atraso">⚠ ATRASO</span>` : ''}
+          </div>
+          ${atrasado ? `<div class="atraso-row">🕐 ${atraso.texto}</div>` : ''}
+          <div class="bill-info">
+            <div class="info-col">
+              <div class="lbl">Vencimento</div>
+              <div class="val ${atrasado ? 'atrasado-text' : ''}">${formatarData(b.due_day)}</div>
+            </div>
+            <div class="info-col" style="text-align:right">
+              <div class="lbl">Valor</div>
+              <div class="val valor">R$ ${formatarValor(b.value)}</div>
+            </div>
+          </div>
+          <div class="bill-btns">
+            <button class="btn-pix" id="pix-${b.id}" onclick="copiarPix(${b.id})">Copiar PIX</button>
+            <button class="btn-boleto" id="bol-${b.id}" ${!b.digitable_line ? 'disabled' : ''} onclick="copiarBoleto('${b.digitable_line}', ${b.id})">Copiar Cód. Barras</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function copiarPix(id) {
+    const btn = document.getElementById(`pix-${id}`);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const r = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, { headers: HEADERS });
+      const d = await r.json();
+      const base64 = d.billing?.pix_copy_paste_base64;
+      const pix = base64 ? atob(base64) : '';
+      await navigator.clipboard.writeText(pix);
+      mostrarToast('✓ PIX copiado!');
+      btn.textContent = 'Copiado!';
+      btn.classList.add('btn-copied');
+      setTimeout(() => { btn.textContent = 'Copiar PIX'; btn.classList.remove('btn-copied'); btn.disabled = false; }, 2000);
+    } catch (e) {
+      alert('Falha ao copiar PIX.');
+      btn.textContent = 'Copiar PIX';
+      btn.disabled = false;
+    }
+  }
+
+  async function copiarBoleto(codigo, id) {
+    const btn = document.getElementById(`bol-${id}`);
+    await navigator.clipboard.writeText(codigo);
+    mostrarToast('✓ Código copiado!');
+    btn.textContent = 'Copiado!';
+    btn.classList.add('btn-copied');
+    setTimeout(() => { btn.textContent = 'Copiar Cód. Barras'; btn.classList.remove('btn-copied'); }, 2000);
+  }
+
+  function sair() {
+    clienteAtual = null;
+    score = 0;
+    document.getElementById('score').textContent = '0';
+    document.getElementById('cpf-input').value = '';
+    document.getElementById('bills-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  // ── HELPERS ──
+  function calcularAtraso(due_day) {
+    if (!due_day) return null;
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const [ano, mes, dia] = due_day.split('-').map(Number);
+    const venc = new Date(ano, mes - 1, dia);
+    if (venc >= hoje) return null;
+    const dias = Math.floor((hoje - venc) / 86400000);
+    if (dias < 30) return { texto: `${dias} dias em atraso` };
+    const meses = Math.floor(dias / 30);
+    return { texto: `${meses} ${meses > 1 ? 'meses' : 'mês'} em atraso` };
+  }
+
+  function formatarData(d) {
+    if (!d) return 'N/A';
+    const [a, m, dia] = d.split('-');
+    return `${dia}/${m}/${a}`;
+  }
+
+  function formatarValor(v) {
+    return v ? parseFloat(v).toFixed(2).replace('.', ',') : '0,00';
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── MINI-JOGO: PARTÍCULAS CLICÁVEIS ──
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -20;
+      this.r = 5 + Math.random() * 5;
+      this.speed = 0.5 + Math.random() * 1.5;
+      this.color = Math.random() > 0.9 ? '#f39c12' : (Math.random() > 0.5 ? '#00d2ff' : '#9d50bb');
+      this.points = this.color === '#f39c12' ? 10 : 1;
+      this.alpha = 1;
+      this.dead = false;
+    }
+    update() { this.y += this.speed; if (this.y > canvas.height + 20) this.reset(); }
+    draw() {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.restore();
+    }
+    hit(mx, my) { return Math.hypot(mx - this.x, my - this.y) < this.r + 16; }
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const p = new Particle();
+    p.y = Math.random() * canvas.height;
+    particles.push(p);
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  canvas.style.pointerEvents = 'auto';
+  canvas.addEventListener('click', e => {
+    if (clienteAtual) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    particles.forEach(p => {
+      if (p.hit(mx, my)) {
+        score += p.points;
+        document.getElementById('score').textContent = score;
+        p.reset();
+      }
+    });
+  });
+
+  canvas.addEventListener('touchstart', e => {
+    if (clienteAtual) return;
+    const rect = canvas.getBoundingClientRect();
+    Array.from(e.touches).forEach(t => {
+      const mx = t.clientX - rect.left;
+      const my = t.clientY - rect.top;
+      particles.forEach(p => {
+        if (p.hit(mx, my)) {
+          score += p.points;
+          document.getElementById('score').textContent = score;
+          p.reset();
+        }
+      });
+    });
+  }, { passive: true });
+</script>
 </body>
 </html>
